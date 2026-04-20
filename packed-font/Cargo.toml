@@ -1,0 +1,13 @@
+[package]
+name = "packed-font"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.102"
+bytemuck = { version = "1.25.0", features = ["derive"] }
+embedded-graphics = "0.8.2"
+fontdue = "0.9.3"
+heapless = "0.9.2"
+packed-font-derive = { path = "packed-font-derive" }
+packed-font-structs = { path = "packed-font-structs" }
