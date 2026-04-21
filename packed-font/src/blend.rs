@@ -20,7 +20,7 @@ fn rgb_blend<C: RgbColor>(c1: &C, c2: &C, a: AaColor) -> (u8, u8, u8) {
 fn blend(v1: u8, v2: u8, a: AaColor) -> u8 {
     let a = a.luma();
     const MAX: u8 = 255 >> (8 - AA_BITS);
-    (v1 * a + v2 * (MAX - a)) / MAX
+    ((v1 as u16 * a as u16 + v2 as u16 * (MAX - a) as u16) / MAX as u16) as u8
 }
 
 macro_rules! impl_blend_rgb {

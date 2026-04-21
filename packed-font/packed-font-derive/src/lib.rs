@@ -5,6 +5,8 @@ use syn::{LitStr, LitInt, Token, parse_macro_input};
 use std::{path::PathBuf, fs::read, ops::RangeInclusive};
 use proc_macro_error::{proc_macro_error, abort_call_site};
 
+use packed_font_structs::FontMetrics;
+
 mod pack_font;
 use pack_font::CompressedFont;
 
@@ -43,15 +45,20 @@ pub fn packed_font(tokens: TokenStream) -> TokenStream {
         Err(e) => abort_call_site!("Can't read file '{}': {}", &file.to_string_lossy(), e),
     };
 
-    let CompressedFont { dict, font_data } = match CompressedFont::compress(bytes, ALL_CHARS, size as f32) {
+    let CompressedFont { metrics, dict, font_data } = match CompressedFont::compress(bytes, ALL_CHARS, size as f32) {
         Ok(packed) => packed,
         Err(e) => abort_call_site!("Can't compress file '{}': {}", &file.to_string_lossy(), e),
     };
 
     let first_char = ALL_CHARS.start();
 
+    let FontMetrics { line_height } = metrics;
+
     quote! {
         ::packed_font::PackedFont {
+            metrics: ::packed_font::FontMetrics {
+                line_height: #line_height,
+            },
             first_char: #first_char,
             dict: &[
                 #(#dict),*

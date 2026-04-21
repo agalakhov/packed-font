@@ -3,10 +3,11 @@ use fontdue::{Font, Metrics};
 use std::{ops::RangeInclusive, };
 use bytemuck::bytes_of;
 
-use packed_font_structs::{AA_BITS, Metrics as PackedMetrics};
+use packed_font_structs::{AA_BITS, FontMetrics, Metrics as PackedMetrics};
 
 #[derive(Debug)]
 pub struct CompressedFont {
+    pub metrics: FontMetrics,
     pub dict: Vec<u16>,
     pub font_data: Vec<u8>,
 }
@@ -25,14 +26,15 @@ fn compress(data: Vec<u8>, bits: u8) -> Vec<u8> {
         } else {
             max - byte
         };
+        if count + addition as u32 > u8::MAX as u32 {
+            sum_count += count;
+            out.push(count.try_into().unwrap());
+            out.push(0);
+            count = 0;
+        }
         count += addition as u32;
         if addition < max {
             sum_count += count;
-            while count > u8::MAX as u32 {
-                out.push(u8::MAX);
-                out.push(0);
-                count -= u8::MAX as u32;
-            }
             out.push(count.try_into().unwrap());
             count = max as u32 - addition as u32;
             covered = !covered;
@@ -70,7 +72,13 @@ impl CompressedFont {
             }
         }
 
+        let line_metrics = font.horizontal_line_metrics(size)
+            .ok_or_else(|| anyhow!("This font does not support horizontal lines"))?;
+
         Ok(Self {
+            metrics: FontMetrics {
+                line_height: (line_metrics.new_line_size.ceil() as u32).try_into()?,
+            },
             dict,
             font_data,
         })

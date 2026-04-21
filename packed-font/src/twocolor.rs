@@ -1,28 +1,29 @@
 use embedded_graphics_core::{Pixel, draw_target::DrawTarget, pixelcolor::RgbColor};
 
-use super::{UnpackTarget, blend::Blend};
+use super::{UnpackStyle, blend::Blend};
 use packed_font_structs::{AaColor, Metrics};
 
-pub struct TwoColor<D: DrawTarget> {
-    target: D,
-    foreground: D::Color,
-    background: D::Color,
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct TwoColor<C> {
+    pub foreground: C,
+    pub background: C,
 }
 
-impl<D: DrawTarget> UnpackTarget for TwoColor<D>
+impl<C> UnpackStyle for TwoColor<C>
 where
-    D::Color: RgbColor + Blend<D::Color, Target = D::Color>,
+    C: RgbColor + Blend<C, Target = C>,
 {
-    type Error = D::Error;
-    fn draw_iter(
-        &mut self,
+    type Color = C;
+    fn draw_iter<D: DrawTarget<Color = C>>(
+        &self,
         _metrics: &Metrics,
+        target: &mut D,
         pixels: impl Iterator<Item = Pixel<AaColor>>,
-    ) -> Result<(), Self::Error> {
+    ) -> Result<(), D::Error> {
         let pixels = pixels.map(|Pixel(pt, grade)| {
             let color = self.foreground.blend(&self.background, grade);
             Pixel(pt, color)
         });
-        self.target.draw_iter(pixels)
+        target.draw_iter(pixels)
     }
 }

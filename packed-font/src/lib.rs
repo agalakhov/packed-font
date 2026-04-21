@@ -2,39 +2,50 @@
 
 mod blend;
 mod unpack;
+mod textrenderer;
 
 pub mod twocolor;
 
 use bytemuck::from_bytes;
-use embedded_graphics_core::{Pixel, geometry::Point};
+use embedded_graphics_core::{Pixel, draw_target::DrawTarget, pixelcolor::PixelColor, geometry::{Point, Size}};
 
 use self::unpack::Unpacker;
 
 pub use packed_font_derive::packed_font;
-pub use packed_font_structs::{AaColor, Metrics};
+pub use packed_font_structs::{AaColor, Metrics, FontMetrics};
 
-pub trait UnpackTarget {
-    type Error;
-    fn draw_iter(
-        &mut self,
+pub use textrenderer::CharacterStyle;
+
+pub trait UnpackStyle {
+    type Color: PixelColor;
+    fn draw_iter<D: DrawTarget<Color = Self::Color>>(
+        &self,
         metrics: &Metrics,
+        target: &mut D,
         iter: impl Iterator<Item = Pixel<AaColor>>,
-    ) -> Result<(), Self::Error>;
+    ) -> Result<(), D::Error>;
 }
 
 #[derive(Debug)]
 pub struct PackedFont {
+    pub metrics: FontMetrics,
     pub first_char: u8,
     pub dict: &'static [u16],
     pub data: &'static [u8],
 }
 
 impl PackedFont {
-    pub fn render<T: UnpackTarget>(
+    pub fn render<S, D>(
         &self,
         character: char,
-        out: &mut T,
-    ) -> Result<Option<&Metrics>, T::Error> {
+        style: &S,
+        origin: Point,
+        target: &mut D,
+    ) -> Result<Option<&Metrics>, D::Error>
+    where
+        S: UnpackStyle,
+        D: DrawTarget<Color = S::Color>,
+    {
         let Ok(character) = TryInto::<u8>::try_into(character) else {
             return Ok(None)
         };
@@ -51,23 +62,23 @@ impl PackedFont {
             .map(|x| (*x) as usize)
             .unwrap_or(self.data.len());
         let raw = &self.data[offset..end_offset];
-        let metrics: &Metrics = from_bytes(raw);
-        let packed = &raw[size_of::<PackedFont>()..];
+        let (metrics, packed) = raw.split_at(size_of::<Metrics>());
+        let metrics: &Metrics = from_bytes(metrics);
 
         let mut x = 0;
         let mut y = 0;
-        let w = metrics.width as i32;
+        let w = metrics.width as u32;
         let pixels = Unpacker::new(packed.iter().cloned()).map(|color| {
+            let pt = origin + Size::new(x, y);
             x += 1;
             if x >= w {
                 y += 1;
                 x = 0;
             }
-            let pt = Point::new(x, y);
             Pixel(pt, color)
         });
 
-        out.draw_iter(metrics, pixels)?;
+        style.draw_iter(metrics, target, pixels)?;
 
         Ok(Some(metrics))
     }
