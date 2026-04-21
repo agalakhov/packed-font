@@ -5,3 +5,4 @@ edition = "2024"
 
 [dependencies]
 bytemuck = { version = "1.25.0", features = ["derive"] }
+embedded-graphics-core = "0.4.1"

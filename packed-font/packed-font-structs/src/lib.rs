@@ -1,8 +1,10 @@
 #![no_std]
 
 use bytemuck::{NoUninit, AnyBitPattern};
+use embedded_graphics_core::pixelcolor::Gray4;
 
 pub const AA_BITS: u8 = 4;
+pub type AaColor = Gray4;
 
 #[derive(Debug, NoUninit, AnyBitPattern, Clone, Copy)]
 #[repr(C)]

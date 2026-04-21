@@ -1,14 +1,25 @@
 #![no_std]
 
+mod blend;
+mod unpack;
+
+pub mod twocolor;
+
 use bytemuck::from_bytes;
+use embedded_graphics_core::{Pixel, geometry::Point};
+
+use self::unpack::Unpacker;
 
 pub use packed_font_derive::packed_font;
-pub use packed_font_structs::Metrics;
-
-use packed_font_structs::AA_BITS;
+pub use packed_font_structs::{AaColor, Metrics};
 
 pub trait UnpackTarget {
-    fn push_color(&mut self, coverage: u8);
+    type Error;
+    fn draw_iter(
+        &mut self,
+        metrics: &Metrics,
+        iter: impl Iterator<Item = Pixel<AaColor>>,
+    ) -> Result<(), Self::Error>;
 }
 
 #[derive(Debug)]
@@ -19,49 +30,45 @@ pub struct PackedFont {
 }
 
 impl PackedFont {
-    pub fn render(&self, character: char, out: &mut impl UnpackTarget) -> Option<&Metrics> {
-        let character: u8 = character.try_into().ok()?;
+    pub fn render<T: UnpackTarget>(
+        &self,
+        character: char,
+        out: &mut T,
+    ) -> Result<Option<&Metrics>, T::Error> {
+        let Ok(character) = TryInto::<u8>::try_into(character) else {
+            return Ok(None)
+        };
         if character < self.first_char {
-            return None
+            return Ok(None);
         }
         let idx = (character - self.first_char) as usize;
         let Some(offset) = self.dict.get(idx).map(|x| (*x) as usize) else {
-            return None
+            return Ok(None);
         };
-        let end_offset = self.dict.get(idx + 1).map(|x| (*x) as usize).unwrap_or(self.data.len());
-        let raw = &self.data[offset .. end_offset];
-        let metrics = from_bytes(raw);
+        let end_offset = self
+            .dict
+            .get(idx + 1)
+            .map(|x| (*x) as usize)
+            .unwrap_or(self.data.len());
+        let raw = &self.data[offset..end_offset];
+        let metrics: &Metrics = from_bytes(raw);
         let packed = &raw[size_of::<PackedFont>()..];
 
-        unpack(packed, out);
+        let mut x = 0;
+        let mut y = 0;
+        let w = metrics.width as i32;
+        let pixels = Unpacker::new(packed.iter().cloned()).map(|color| {
+            x += 1;
+            if x >= w {
+                y += 1;
+                x = 0;
+            }
+            let pt = Point::new(x, y);
+            Pixel(pt, color)
+        });
 
-        Some(metrics)
+        out.draw_iter(metrics, pixels)?;
+
+        Ok(Some(metrics))
     }
 }
-
-fn unpack(packed: &[u8], out: &mut impl UnpackTarget) {
-    const MAX: u8 = 255 >> (8 - AA_BITS);
-    let mut covered = false;
-    let mut tail = 0;
-    for byte in packed {
-        let mut count = *byte - tail;
-        while count > MAX {
-            out.push_color(if covered {
-                MAX
-            } else {
-                0
-            });
-            count -= MAX;
-        }
-        if count > 0 {
-            tail = MAX - count;
-            out.push_color(if covered {
-                count
-            } else {
-                tail
-            });
-            covered = !covered;
-        }
-    }
-}
-
