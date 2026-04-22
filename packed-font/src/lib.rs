@@ -7,7 +7,7 @@ mod textrenderer;
 pub mod twocolor;
 
 use bytemuck::from_bytes;
-use embedded_graphics_core::{Pixel, draw_target::DrawTarget, pixelcolor::PixelColor, geometry::{Point, Size}};
+use embedded_graphics_core::{draw_target::DrawTarget, pixelcolor::PixelColor, primitives::Rectangle, geometry::{Point, Size}};
 
 use self::unpack::Unpacker;
 
@@ -18,12 +18,7 @@ pub use textrenderer::CharacterStyle;
 
 pub trait UnpackStyle {
     type Color: PixelColor;
-    fn draw_iter<D: DrawTarget<Color = Self::Color>>(
-        &self,
-        metrics: &Metrics,
-        target: &mut D,
-        iter: impl Iterator<Item = Pixel<AaColor>>,
-    ) -> Result<(), D::Error>;
+    fn map_color(&self, grade: AaColor) -> Self::Color;
 }
 
 #[derive(Debug)]
@@ -65,22 +60,18 @@ impl PackedFont {
         let (metrics, packed) = raw.split_at(size_of::<Metrics>());
         let metrics: &Metrics = from_bytes(metrics);
 
-        let mut x = 0;
-        let mut y = 0;
         let w = metrics.width as u32;
-        let lsb = metrics.left_bearing.max(0) as u32;
-        let tsb = (60 - metrics.top_bearing).max(0) as u32;
-        let pixels = Unpacker::new(packed.iter().cloned()).map(|color| {
-            let pt = origin + Size::new(x + lsb, y + tsb);
-            x += 1;
-            if x >= w {
-                y += 1;
-                x = 0;
-            }
-            Pixel(pt, color)
-        });
+        let h = 100;
+        let lsb = metrics.left_bearing as i32;
+        let tsb = (60 - metrics.top_bearing) as i32;
+        let origin = Point::new(origin.x + lsb, origin.y + tsb);
 
-        style.draw_iter(metrics, target, pixels)?;
+        let rect = Rectangle::new(origin, Size::new(w, h));
+
+        let pixels = Unpacker::new(packed.iter().cloned())
+            .map(|a| style.map_color(a));
+
+        target.fill_contiguous(&rect, pixels)?;
 
         Ok(Some(metrics))
     }

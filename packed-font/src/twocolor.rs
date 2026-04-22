@@ -1,7 +1,7 @@
-use embedded_graphics_core::{Pixel, draw_target::DrawTarget, pixelcolor::RgbColor};
+use embedded_graphics_core::pixelcolor::RgbColor;
 
 use super::{UnpackStyle, blend::Blend};
-use packed_font_structs::{AaColor, Metrics};
+use packed_font_structs::AaColor;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TwoColor<C> {
@@ -14,16 +14,7 @@ where
     C: RgbColor + Blend<C, Target = C>,
 {
     type Color = C;
-    fn draw_iter<D: DrawTarget<Color = C>>(
-        &self,
-        _metrics: &Metrics,
-        target: &mut D,
-        pixels: impl Iterator<Item = Pixel<AaColor>>,
-    ) -> Result<(), D::Error> {
-        let pixels = pixels.map(|Pixel(pt, grade)| {
-            let color = self.foreground.blend(&self.background, grade);
-            Pixel(pt, color)
-        });
-        target.draw_iter(pixels)
+    fn map_color(&self, grade: AaColor) -> Self::Color {
+        self.foreground.blend(&self.background, grade)
     }
 }
