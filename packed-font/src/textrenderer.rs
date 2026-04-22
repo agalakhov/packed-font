@@ -57,10 +57,10 @@ where
 
         for chr in text.chars() {
             let origin = Point::new(x, y);
-            let full_height = (self.font.metrics.ascent - self.font.metrics.descent) as u32;
             if let Some((metrics, height)) = self.font.render(chr, &self.style, origin, target)? {
                 x += metrics.advance as i32;
                 if let Some(color) = self.style.background_color() {
+                    let full_height = (self.font.metrics.ascent - self.font.metrics.descent) as u32;
                     let top_left = Point::new(origin.x, origin.y - self.font.metrics.ascent as i32);
                     if let Ok(left_bearing) = metrics.left_bearing.try_into() {
                         target.fill_solid(
@@ -125,17 +125,33 @@ where
     where
         D: DrawTarget<Color = Self::Color>,
     {
-        let position = self.apply_baseline(position, baseline);
+        let pos = self.apply_baseline(position, baseline);
         let height = self.line_height();
         if let Some(color) = self.style.background_color() {
-            target.fill_solid(&Rectangle::new(position, Size::new(width, height)), color)?;
+            target.fill_solid(&Rectangle::new(pos, Size::new(width, height)), color)?;
         }
-        Ok(Point::new(position.x + width as i32, position.y))
+        Ok(Point::new(pos.x + width as i32, pos.y))
     }
 
     fn measure_string(&self, text: &str, position: Point, baseline: Baseline) -> TextMetrics {
-        let position = self.apply_baseline(position, baseline);
-        todo!()
+        let pos = self.apply_baseline(position, baseline);
+        let full_height = (self.font.metrics.ascent - self.font.metrics.descent) as u32;
+        let mut total_width = 0;
+
+        let top_left = Point::new(pos.x, pos.y - self.font.metrics.ascent as i32);
+
+        for chr in text.chars() {
+            if let Some((metrics, _)) = self.font.get_metrics_and_data(chr) {
+                total_width += metrics.advance as i32;
+            }
+        }
+
+        let width = total_width.max(0) as u32;
+
+        TextMetrics {
+            next_position: Point::new(position.x + total_width, position.y),
+            bounding_box: Rectangle::new(top_left, Size::new(width, full_height)),
+        }
     }
 
     fn line_height(&self) -> u32 {

@@ -36,6 +36,29 @@ pub struct PackedFont {
 }
 
 impl PackedFont {
+    pub fn get_metrics_and_data(&self, character: char) -> Option<(&Metrics, &[u8])> {
+        let Ok(character) = TryInto::<u8>::try_into(character) else {
+            return None;
+        };
+        if character < self.first_char {
+            return None;
+        }
+        let idx = (character - self.first_char) as usize;
+        let Some(offset) = self.dict.get(idx).map(|x| (*x) as usize) else {
+            return None;
+        };
+        let end_offset = self
+            .dict
+            .get(idx + 1)
+            .map(|x| (*x) as usize)
+            .unwrap_or(self.data.len());
+        let raw = &self.data[offset..end_offset];
+        let (metrics, packed) = raw.split_at(size_of::<Metrics>());
+        let metrics: &Metrics = from_bytes(metrics);
+
+        Some((metrics, packed))
+    }
+
     pub fn render<S, D>(
         &self,
         character: char,
@@ -47,24 +70,9 @@ impl PackedFont {
         S: UnpackStyle,
         D: DrawTarget<Color = S::Color>,
     {
-        let Ok(character) = TryInto::<u8>::try_into(character) else {
+        let Some((metrics, packed)) = self.get_metrics_and_data(character) else {
             return Ok(None);
         };
-        if character < self.first_char {
-            return Ok(None);
-        }
-        let idx = (character - self.first_char) as usize;
-        let Some(offset) = self.dict.get(idx).map(|x| (*x) as usize) else {
-            return Ok(None);
-        };
-        let end_offset = self
-            .dict
-            .get(idx + 1)
-            .map(|x| (*x) as usize)
-            .unwrap_or(self.data.len());
-        let raw = &self.data[offset..end_offset];
-        let (metrics, packed) = raw.split_at(size_of::<Metrics>());
-        let metrics: &Metrics = from_bytes(metrics);
 
         let w = metrics.width as u32;
         let height = if w > 0 {

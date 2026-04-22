@@ -4,7 +4,7 @@ use embedded_graphics::{
     Drawable,
     geometry::{Point, Size},
     pixelcolor::{Rgb565, RgbColor},
-    text::{Baseline, Text},
+    text::{Alignment, Baseline, Text, TextStyleBuilder},
 };
 use embedded_graphics_simulator::{OutputSettingsBuilder, SimulatorDisplay, Window};
 
@@ -23,9 +23,17 @@ fn main() {
         style: colors,
     };
 
-    Text::with_baseline("Booting, World!", Point::new(0, 38), style, Baseline::Middle)
-        .draw(&mut display)
-        .expect("Error rendering text");
+    Text::with_text_style(
+        "Booting",
+        Point::new(142, 38),
+        style,
+        TextStyleBuilder::new()
+            .alignment(Alignment::Center)
+            .baseline(Baseline::Middle)
+            .build(),
+    )
+    .draw(&mut display)
+    .expect("Error rendering text");
 
     let output_settings = OutputSettingsBuilder::new().scale(4).build();
     Window::new("Two color demo", &output_settings).show_static(&display);
