@@ -28,7 +28,7 @@ impl<'t, S: UnpackStyle> CharacterStyle<'t, S> {
             Baseline::Bottom => {
                 metrics.descent as i32 + (metrics.leading - metrics.leading / 2) as i32
             }
-            Baseline::Middle => (self.line_height() / 2) as i32,
+            Baseline::Middle => (metrics.ascent as i32 + metrics.descent as i32) / 2,
             Baseline::Alphabetic => 0,
         };
         Point::new(x, y)
@@ -62,52 +62,52 @@ where
                 x += metrics.advance as i32;
                 if let Some(color) = self.style.background_color() {
                     let top_left = Point::new(origin.x, origin.y - self.font.metrics.ascent as i32);
-                    target.fill_solid(
-                        &Rectangle::new(
-                            top_left,
-                            Size::new(metrics.left_bearing as u32, full_height),
-                        ),
-                        color,
-                    )?;
-                    target.fill_solid(
-                        &Rectangle::new(
-                            Point::new(top_left.x + metrics.left_bearing as i32, top_left.y),
-                            Size::new(
-                                metrics.width as u32,
-                                (self.font.metrics.ascent - metrics.top_bearing) as u32,
+                    if let Ok(left_bearing) = metrics.left_bearing.try_into() {
+                        target.fill_solid(
+                            &Rectangle::new(top_left, Size::new(left_bearing, full_height)),
+                            color,
+                        )?;
+                    }
+                    if self.font.metrics.ascent > metrics.top_bearing {
+                        target.fill_solid(
+                            &Rectangle::new(
+                                Point::new(top_left.x + metrics.left_bearing as i32, top_left.y),
+                                Size::new(
+                                    metrics.width as u32,
+                                    (self.font.metrics.ascent - metrics.top_bearing) as u32,
+                                ),
                             ),
-                        ),
-                        color,
-                    )?;
+                            color,
+                        )?;
+                    }
                     let bottom_y_offset = height as i32 - metrics.top_bearing as i32;
-                    target.fill_solid(
-                        &Rectangle::new(
-                            Point::new(
-                                top_left.x + metrics.left_bearing as i32,
-                                origin.y + bottom_y_offset,
+                    let bottom_rest = -bottom_y_offset - self.font.metrics.descent as i32;
+                    if bottom_rest > 0 {
+                        target.fill_solid(
+                            &Rectangle::new(
+                                Point::new(
+                                    top_left.x + metrics.left_bearing as i32,
+                                    origin.y + bottom_y_offset,
+                                ),
+                                Size::new(metrics.width as u32, bottom_rest as u32),
                             ),
-                            Size::new(
-                                metrics.width as u32,
-                                (-bottom_y_offset - self.font.metrics.descent as i32) as u32,
+                            color,
+                        )?;
+                    }
+                    let right_rest =
+                        metrics.advance as i32 - metrics.left_bearing as i32 - metrics.width as i32;
+                    if right_rest > 0 {
+                        target.fill_solid(
+                            &Rectangle::new(
+                                Point::new(
+                                    top_left.x + metrics.left_bearing as i32 + metrics.width as i32,
+                                    top_left.y,
+                                ),
+                                Size::new(right_rest as u32, full_height),
                             ),
-                        ),
-                        color,
-                    )?;
-                    target.fill_solid(
-                        &Rectangle::new(
-                            Point::new(
-                                top_left.x + metrics.left_bearing as i32 + metrics.width as i32,
-                                top_left.y,
-                            ),
-                            Size::new(
-                                (metrics.advance as i32
-                                    - metrics.left_bearing as i32
-                                    - metrics.width as i32) as u32,
-                                full_height,
-                            ),
-                        ),
-                        color,
-                    )?;
+                            color,
+                        )?;
+                    }
                 }
             }
         }

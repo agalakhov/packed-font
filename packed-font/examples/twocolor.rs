@@ -8,14 +8,14 @@ use embedded_graphics::{
 };
 use embedded_graphics_simulator::{OutputSettingsBuilder, SimulatorDisplay, Window};
 
-const FONT: PackedFont = packed_font!("din1451alt.ttf", 36);
+const FONT: PackedFont = packed_font!("din1451alt.ttf", 76);
 
 fn main() {
     let mut display = SimulatorDisplay::<Rgb565>::new(Size::new(284, 76));
 
     let colors = TwoColor {
-        foreground: Rgb565::YELLOW,
-        background: Rgb565::BLUE,
+        foreground: Rgb565::GREEN,
+        background: Rgb565::BLACK,
     };
 
     let style = CharacterStyle {
@@ -23,7 +23,7 @@ fn main() {
         style: colors,
     };
 
-    Text::with_baseline("Hello, World!", Point::zero(), style, Baseline::Top)
+    Text::with_baseline("Booting, World!", Point::new(0, 38), style, Baseline::Middle)
         .draw(&mut display)
         .expect("Error rendering text");
 
