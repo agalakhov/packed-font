@@ -1,4 +1,4 @@
-#![no_std]
+//#![no_std]
 
 mod blend;
 mod unpack;
@@ -68,8 +68,10 @@ impl PackedFont {
         let mut x = 0;
         let mut y = 0;
         let w = metrics.width as u32;
+        let lsb = metrics.left_bearing.max(0) as u32;
+        let tsb = (60 - metrics.top_bearing).max(0) as u32;
         let pixels = Unpacker::new(packed.iter().cloned()).map(|color| {
-            let pt = origin + Size::new(x, y);
+            let pt = origin + Size::new(x + lsb, y + tsb);
             x += 1;
             if x >= w {
                 y += 1;

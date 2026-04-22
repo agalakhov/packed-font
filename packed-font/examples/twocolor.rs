@@ -3,7 +3,7 @@ use packed_font::{PackedFont, twocolor::TwoColor, CharacterStyle, packed_font};
 use embedded_graphics::{geometry::{Size, Point}, pixelcolor::{RgbColor, Rgb565}, text::Text, Drawable};
 use embedded_graphics_simulator::{SimulatorDisplay, OutputSettingsBuilder, Window};
 
-const FONT: PackedFont = packed_font!("/usr/share/fonts/TTF/DejaVuSans.ttf", 76);
+const FONT: PackedFont = packed_font!("din1451alt.ttf", 76);
 
 fn main() {
     let mut display = SimulatorDisplay::<Rgb565>::new(Size::new(284, 76));

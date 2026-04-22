@@ -94,6 +94,7 @@ impl CompressedFont {
             };
 
             let (metrics, bbox) = get_metrics(&glyph_metrics, id)?;
+            println!("metrics: {metrics:?}");
             let height = (bbox.y_max.ceil() - bbox.y_min.floor()) as u32;
             let bitmap = if metrics.width > 0 && height > 0 {
                 let mut bitmap = Bitmap::new(-bbox.x_min, bbox.y_max, metrics.width as u32, height);

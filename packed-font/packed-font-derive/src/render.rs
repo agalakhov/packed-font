@@ -12,7 +12,6 @@ impl Bitmap {
     pub fn new(x0: f32, y0: f32, width: u32, height: u32) -> Self {
         let pixmap = Pixmap::new(width, height)
             .unwrap();
-        println!("Pixmap x0={x0} y0={y0}");
         Self {
             x0,
             y0,
@@ -52,14 +51,12 @@ impl Bitmap {
 
 impl OutlinePen for Bitmap {
     fn move_to(&mut self, x: f32, y: f32) {
-        println!("move_to {x} {y} -> {} {}", self.x0 + x, self.y0 - y);
         let x0 = self.x0;
         let y0 = self.y0;
         self.path().move_to(x0 + x, y0 - y)
     }
 
     fn line_to(&mut self, x: f32, y: f32) {
-        println!("line_to {x} {y} -> {} {}", self.x0 + x, self.y0 - y);
         let x0 = self.x0;
         let y0 = self.y0;
         self.path().line_to(x0 + x, y0 - y)
