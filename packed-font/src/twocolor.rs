@@ -17,4 +17,7 @@ where
     fn map_color(&self, grade: AaColor) -> Self::Color {
         self.foreground.blend(&self.background, grade)
     }
+    fn background_color(&self) -> Option<Self::Color> {
+        Some(self.background)
+    }
 }

@@ -57,12 +57,14 @@ pub fn packed_font(tokens: TokenStream) -> TokenStream {
 
     let first_char = ALL_CHARS.start();
 
-    let FontMetrics { line_height } = metrics;
+    let FontMetrics { ascent, descent, leading } = metrics;
 
     quote! {
         ::packed_font::PackedFont {
             metrics: ::packed_font::FontMetrics {
-                line_height: #line_height,
+                ascent: #ascent,
+                descent: #descent,
+                leading: #leading,
             },
             first_char: #first_char,
             dict: &[

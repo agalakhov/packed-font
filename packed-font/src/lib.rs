@@ -1,24 +1,30 @@
 //#![no_std]
 
 mod blend;
-mod unpack;
 mod textrenderer;
+mod unpack;
 
 pub mod twocolor;
 
 use bytemuck::from_bytes;
-use embedded_graphics_core::{draw_target::DrawTarget, pixelcolor::PixelColor, primitives::Rectangle, geometry::{Point, Size}};
+use embedded_graphics_core::{
+    draw_target::DrawTarget,
+    geometry::{Point, Size},
+    pixelcolor::PixelColor,
+    primitives::Rectangle,
+};
 
 use self::unpack::Unpacker;
 
 pub use packed_font_derive::packed_font;
-pub use packed_font_structs::{AaColor, Metrics, FontMetrics};
+pub use packed_font_structs::{AaColor, FontMetrics, Metrics};
 
 pub use textrenderer::CharacterStyle;
 
 pub trait UnpackStyle {
     type Color: PixelColor;
     fn map_color(&self, grade: AaColor) -> Self::Color;
+    fn background_color(&self) -> Option<Self::Color>;
 }
 
 #[derive(Debug)]
@@ -42,7 +48,7 @@ impl PackedFont {
         D: DrawTarget<Color = S::Color>,
     {
         let Ok(character) = TryInto::<u8>::try_into(character) else {
-            return Ok(None)
+            return Ok(None);
         };
         if character < self.first_char {
             return Ok(None);
@@ -63,13 +69,12 @@ impl PackedFont {
         let w = metrics.width as u32;
         let h = 100;
         let lsb = metrics.left_bearing as i32;
-        let tsb = (60 - metrics.top_bearing) as i32;
-        let origin = Point::new(origin.x + lsb, origin.y + tsb);
+        let tsb = metrics.top_bearing as i32;
+        let origin = Point::new(origin.x + lsb, origin.y - tsb);
 
         let rect = Rectangle::new(origin, Size::new(w, h));
 
-        let pixels = Unpacker::new(packed.iter().cloned())
-            .map(|a| style.map_color(a));
+        let pixels = Unpacker::new(packed.iter().cloned()).map(|a| style.map_color(a));
 
         target.fill_contiguous(&rect, pixels)?;
 

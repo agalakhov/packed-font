@@ -114,11 +114,15 @@ impl CompressedFont {
 
         let metrics = font.metrics(size, location);
         println!("Font metrics: {:?}", metrics);
-        let line_height = (metrics.ascent.ceil() + metrics.descent.ceil()) as u32;
+        let ascent = (metrics.ascent.ceil() as i32).try_into()?;
+        let descent = (metrics.descent.floor() as i32).try_into()?;
+        let leading = (metrics.leading.ceil() as i32).try_into()?;
 
         Ok(Self {
             metrics: FontMetrics {
-                line_height: line_height.try_into()?,
+                ascent,
+                descent,
+                leading,
             },
             dict,
             font_data,

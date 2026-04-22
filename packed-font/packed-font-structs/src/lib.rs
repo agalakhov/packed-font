@@ -8,7 +8,9 @@ pub type AaColor = Gray4;
 
 #[derive(Debug, Clone)]
 pub struct FontMetrics {
-    pub line_height: u8,
+    pub ascent: i8,
+    pub descent: i8,
+    pub leading: u8,
 }
 
 #[derive(Debug, NoUninit, AnyBitPattern, Clone, Copy)]

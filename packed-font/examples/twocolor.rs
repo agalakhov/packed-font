@@ -1,9 +1,14 @@
-use packed_font::{PackedFont, twocolor::TwoColor, CharacterStyle, packed_font};
+use packed_font::{CharacterStyle, PackedFont, packed_font, twocolor::TwoColor};
 
-use embedded_graphics::{geometry::{Size, Point}, pixelcolor::{RgbColor, Rgb565}, text::Text, Drawable};
-use embedded_graphics_simulator::{SimulatorDisplay, OutputSettingsBuilder, Window};
+use embedded_graphics::{
+    Drawable,
+    geometry::{Point, Size},
+    pixelcolor::{Rgb565, RgbColor},
+    text::{Baseline, Text},
+};
+use embedded_graphics_simulator::{OutputSettingsBuilder, SimulatorDisplay, Window};
 
-const FONT: PackedFont = packed_font!("din1451alt.ttf", 76);
+const FONT: PackedFont = packed_font!("din1451alt.ttf", 36);
 
 fn main() {
     let mut display = SimulatorDisplay::<Rgb565>::new(Size::new(284, 76));
@@ -18,11 +23,10 @@ fn main() {
         style: colors,
     };
 
-    Text::new("Hello World", Point::zero(), style).draw(&mut display)
+    Text::with_baseline("Hello World", Point::zero(), style, Baseline::Top)
+        .draw(&mut display)
         .expect("Error rendering text");
 
-    let output_settings = OutputSettingsBuilder::new()
-        .scale(4)
-        .build();
+    let output_settings = OutputSettingsBuilder::new().scale(4).build();
     Window::new("Two color demo", &output_settings).show_static(&display);
 }

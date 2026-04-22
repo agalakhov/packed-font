@@ -38,11 +38,15 @@ where
                     MAX
                 };
                 self.count -= MAX as i16;
-                break Some(AaColor::new(if self.covered { coverage } else { MAX - coverage }))
+                break Some(AaColor::new(if self.covered {
+                    coverage
+                } else {
+                    MAX - coverage
+                }));
             } else {
                 self.covered = !self.covered;
                 let Some(count) = self.packed.next() else {
-                    break None
+                    break None;
                 };
                 self.count += count as i16;
             }
