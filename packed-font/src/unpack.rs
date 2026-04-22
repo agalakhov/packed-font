@@ -1,4 +1,4 @@
-use core::{iter::Fuse, mem::replace};
+use core::iter::Fuse;
 
 use packed_font_structs::{AA_BITS, AaColor};
 

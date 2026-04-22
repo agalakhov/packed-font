@@ -23,7 +23,7 @@ fn main() {
         style: colors,
     };
 
-    Text::with_baseline("Hello World", Point::zero(), style, Baseline::Top)
+    Text::with_baseline("Hello, World!", Point::zero(), style, Baseline::Top)
         .draw(&mut display)
         .expect("Error rendering text");
 

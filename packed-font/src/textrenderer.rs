@@ -24,8 +24,10 @@ impl<'t, S: UnpackStyle> CharacterStyle<'t, S> {
         let Point { x, mut y } = position;
         let metrics = &self.font.metrics;
         y += match baseline {
-            Baseline::Top => metrics.ascent as i32,
-            Baseline::Bottom => metrics.descent as i32,
+            Baseline::Top => metrics.ascent as i32 + (metrics.leading / 2) as i32,
+            Baseline::Bottom => {
+                metrics.descent as i32 + (metrics.leading - metrics.leading / 2) as i32
+            }
             Baseline::Middle => (self.line_height() / 2) as i32,
             Baseline::Alphabetic => 0,
         };
@@ -55,8 +57,58 @@ where
 
         for chr in text.chars() {
             let origin = Point::new(x, y);
-            if let Some(metrics) = self.font.render(chr, &self.style, origin, target)? {
+            let full_height = (self.font.metrics.ascent - self.font.metrics.descent) as u32;
+            if let Some((metrics, height)) = self.font.render(chr, &self.style, origin, target)? {
                 x += metrics.advance as i32;
+                if let Some(color) = self.style.background_color() {
+                    let top_left = Point::new(origin.x, origin.y - self.font.metrics.ascent as i32);
+                    target.fill_solid(
+                        &Rectangle::new(
+                            top_left,
+                            Size::new(metrics.left_bearing as u32, full_height),
+                        ),
+                        color,
+                    )?;
+                    target.fill_solid(
+                        &Rectangle::new(
+                            Point::new(top_left.x + metrics.left_bearing as i32, top_left.y),
+                            Size::new(
+                                metrics.width as u32,
+                                (self.font.metrics.ascent - metrics.top_bearing) as u32,
+                            ),
+                        ),
+                        color,
+                    )?;
+                    let bottom_y_offset = height as i32 - metrics.top_bearing as i32;
+                    target.fill_solid(
+                        &Rectangle::new(
+                            Point::new(
+                                top_left.x + metrics.left_bearing as i32,
+                                origin.y + bottom_y_offset,
+                            ),
+                            Size::new(
+                                metrics.width as u32,
+                                (-bottom_y_offset - self.font.metrics.descent as i32) as u32,
+                            ),
+                        ),
+                        color,
+                    )?;
+                    target.fill_solid(
+                        &Rectangle::new(
+                            Point::new(
+                                top_left.x + metrics.left_bearing as i32 + metrics.width as i32,
+                                top_left.y,
+                            ),
+                            Size::new(
+                                (metrics.advance as i32
+                                    - metrics.left_bearing as i32
+                                    - metrics.width as i32) as u32,
+                                full_height,
+                            ),
+                        ),
+                        color,
+                    )?;
+                }
             }
         }
 

@@ -42,7 +42,7 @@ impl PackedFont {
         style: &S,
         origin: Point,
         target: &mut D,
-    ) -> Result<Option<&Metrics>, D::Error>
+    ) -> Result<Option<(&Metrics, u32)>, D::Error>
     where
         S: UnpackStyle,
         D: DrawTarget<Color = S::Color>,
@@ -67,17 +67,24 @@ impl PackedFont {
         let metrics: &Metrics = from_bytes(metrics);
 
         let w = metrics.width as u32;
-        let h = 100;
-        let lsb = metrics.left_bearing as i32;
-        let tsb = metrics.top_bearing as i32;
-        let origin = Point::new(origin.x + lsb, origin.y - tsb);
+        let height = if w > 0 {
+            let h = (self.metrics.ascent as i32 - self.metrics.descent as i32) as u32;
+            let lsb = metrics.left_bearing as i32;
+            let tsb = metrics.top_bearing as i32;
+            let origin = Point::new(origin.x + lsb, origin.y - tsb);
 
-        let rect = Rectangle::new(origin, Size::new(w, h));
+            let rect = Rectangle::new(origin, Size::new(w, h));
 
-        let pixels = Unpacker::new(packed.iter().cloned()).map(|a| style.map_color(a));
+            let pixels = Unpacker::new(packed.iter().cloned()).map(|a| style.map_color(a));
+            let mut pixel_count = 0;
+            let pixels = pixels.inspect(|_| pixel_count += 1);
 
-        target.fill_contiguous(&rect, pixels)?;
+            target.fill_contiguous(&rect, pixels)?;
 
-        Ok(Some(metrics))
+            pixel_count / w
+        } else {
+            0
+        };
+        Ok(Some((metrics, height)))
     }
 }
