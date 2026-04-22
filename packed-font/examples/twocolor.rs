@@ -3,7 +3,7 @@ use packed_font::{PackedFont, twocolor::TwoColor, CharacterStyle, packed_font};
 use embedded_graphics::{geometry::{Size, Point}, pixelcolor::{RgbColor, Rgb565}, text::Text, Drawable};
 use embedded_graphics_simulator::{SimulatorDisplay, OutputSettingsBuilder, Window};
 
-const FONT: PackedFont = packed_font!("/usr/share/fonts/TTF/DejaVuSans.ttf", 16);
+const FONT: PackedFont = packed_font!("/usr/share/fonts/TTF/DejaVuSans.ttf", 76);
 
 fn main() {
     let mut display = SimulatorDisplay::<Rgb565>::new(Size::new(284, 76));
@@ -22,7 +22,7 @@ fn main() {
         .expect("Error rendering text");
 
     let output_settings = OutputSettingsBuilder::new()
-        .scale(8)
+        .scale(4)
         .build();
     Window::new("Two color demo", &output_settings).show_static(&display);
 }

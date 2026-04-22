@@ -10,9 +10,10 @@ proc-macro = true
 anyhow = "1.0.102"
 bytemuck = { version = "1.25.0", features = ["derive"] }
 derive-syn-parse = "0.2.0"
-fontdue = "0.9.3"
 packed-font-structs = { path = "../packed-font-structs" }
 proc-macro-error = "1.0.4"
 proc-macro2 = { version = "1.0.106", features = ["span-locations"] }
 quote = "1.0.45"
+skrifa = "0.42.0"
 syn = { version = "2.0.117", features = ["full"] }
+tiny-skia = "0.12.0"

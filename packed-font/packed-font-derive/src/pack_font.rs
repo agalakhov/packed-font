@@ -1,9 +1,10 @@
-use anyhow::{anyhow, Error};
-use fontdue::{Font, Metrics};
-use std::{ops::RangeInclusive, };
+use anyhow::{Error, anyhow};
 use bytemuck::bytes_of;
+use skrifa::{prelude::*, metrics::{GlyphMetrics, BoundingBox}, outline::{HintingInstance, HintingOptions}};
+use std::ops::RangeInclusive;
 
 use packed_font_structs::{AA_BITS, FontMetrics, Metrics as PackedMetrics};
+use crate::render::Bitmap;
 
 #[derive(Debug)]
 pub struct CompressedFont {
@@ -12,7 +13,7 @@ pub struct CompressedFont {
     pub font_data: Vec<u8>,
 }
 
-fn compress(data: Vec<u8>, bits: u8) -> Vec<u8> {
+fn compress(data: impl ExactSizeIterator<Item = u8>, bits: u8) -> Vec<u8> {
     let max = 255_u8 >> (8 - bits);
     let total_count = data.len() as u32 * max as u32;
     let mut out = Vec::new();
@@ -21,11 +22,7 @@ fn compress(data: Vec<u8>, bits: u8) -> Vec<u8> {
     let mut sum_count: u32 = 0;
     for byte in data {
         let byte = byte >> (8 - bits);
-        let addition = if covered {
-            byte
-        } else {
-            max - byte
-        };
+        let addition = if covered { byte } else { max - byte };
         if count + addition as u32 > u8::MAX as u32 {
             sum_count += count;
             out.push(count.try_into().unwrap());
@@ -40,44 +37,79 @@ fn compress(data: Vec<u8>, bits: u8) -> Vec<u8> {
             covered = !covered;
         }
     }
+    if count > 0 {
+        out.push(count.try_into().unwrap());
+    }
     sum_count += count as u32;
     assert_eq!(sum_count, total_count);
     out
 }
 
-fn pack_metrics(m: Metrics) -> Result<PackedMetrics, Error> {
-    Ok(PackedMetrics {
-        xmin: m.xmin.try_into()?,
-        ymin: m.ymin.try_into()?,
-        width: m.width.try_into()?,
-        advance: m.advance_width.round() as u8,
-    })
+fn get_metrics(metrics: &GlyphMetrics, id: GlyphId) -> Result<(PackedMetrics, BoundingBox), Error> {
+    let advance = (metrics.advance_width(id).unwrap().ceil() as i32).try_into()?;
+    let bbox = metrics.bounds(id).unwrap();
+    let left_bearing = (bbox.x_min.floor() as i32).try_into()?;
+    let top_bearing = (bbox.y_max.ceil() as i32).try_into()?;
+    let x = bbox.x_max.ceil() as i32;
+    let y = bbox.y_min.floor() as i32;
+    let width = (x - left_bearing as i32).try_into()?;
+
+    Ok((PackedMetrics {
+        left_bearing,
+        top_bearing,
+        width,
+        advance,
+    }, bbox))
 }
 
 impl CompressedFont {
-    pub fn compress(font: impl AsRef<[u8]>, chars: RangeInclusive<u8>, size: f32) -> Result<Self, Error> {
-        let font = Font::from_bytes(font.as_ref(), Default::default())
-            .map_err(|e| anyhow!(e))?;
+    pub fn compress<'t>(
+        font: impl AsRef<[u8]>,
+        chars: RangeInclusive<u8>,
+        size: f32,
+        location: &[NormalizedCoord],
+    ) -> Result<Self, Error> {
+        let font = FontRef::new(font.as_ref())?;
+        let size = Size::new(size); // TODO
+        let outlines = font.outline_glyphs();
+        let glyph_metrics = font.glyph_metrics(size, location);
+        let hinting = HintingInstance::new(&outlines, size, location, HintingOptions::default())?;
+        let charmap = font.charmap();
 
         let mut dict = Vec::<u16>::new();
         let mut font_data = Vec::new();
         for chr in chars {
             dict.push(font_data.len().try_into()?);
-            let (metrics, bitmap) = font.rasterize(chr as char, size);
-            let metrics = pack_metrics(metrics)?;
+
+            let Some(id) = charmap.map(chr) else {
+                Err(anyhow!("Character '{}' not in the font", chr))?
+            };
+
+            let (metrics, bbox) = get_metrics(&glyph_metrics, id)?;
+            let height = (bbox.y_max.ceil() - bbox.y_min.floor()) as u32;
+            let bitmap = if metrics.width > 0 && height > 0 {
+                let mut bitmap = Bitmap::new(-bbox.x_min, bbox.y_max, metrics.width as u32, height);
+                let glyph = outlines.get(id).unwrap();
+                bitmap.draw_glyph(&hinting, &glyph);
+                Some(bitmap)
+            } else {
+                None
+            };
+
             font_data.extend_from_slice(bytes_of(&metrics));
-            if ! bitmap.is_empty() {
-                let mut bitmap = compress(bitmap, AA_BITS);
+            if let Some(bitmap) = bitmap {
+                let mut bitmap = compress(bitmap.pixels(), AA_BITS);
                 font_data.append(&mut bitmap);
             }
         }
 
-        let line_metrics = font.horizontal_line_metrics(size)
-            .ok_or_else(|| anyhow!("This font does not support horizontal lines"))?;
+        let metrics = font.metrics(size, location);
+        println!("Font metrics: {:?}", metrics);
+        let line_height = (metrics.ascent.ceil() + metrics.descent.ceil()) as u32;
 
         Ok(Self {
             metrics: FontMetrics {
-                line_height: (line_metrics.new_line_size.ceil() as u32).try_into()?,
+                line_height: line_height.try_into()?,
             },
             dict,
             font_data,

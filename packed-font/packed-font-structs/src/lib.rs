@@ -14,8 +14,8 @@ pub struct FontMetrics {
 #[derive(Debug, NoUninit, AnyBitPattern, Clone, Copy)]
 #[repr(C)]
 pub struct Metrics {
-    pub xmin: i8,
-    pub ymin: i8,
+    pub left_bearing: i8,
+    pub top_bearing: i8,
     pub width: u8,
     pub advance: u8,
 }

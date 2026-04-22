@@ -1,16 +1,17 @@
 use derive_syn_parse::Parse;
 use proc_macro::{self, TokenStream};
+use proc_macro_error::{abort_call_site, proc_macro_error};
 use quote::quote;
-use syn::{LitStr, LitInt, Token, parse_macro_input};
-use std::{path::PathBuf, fs::read, ops::RangeInclusive};
-use proc_macro_error::{proc_macro_error, abort_call_site};
+use std::{fs::read, ops::RangeInclusive, path::PathBuf};
+use syn::{LitInt, LitStr, Token, parse_macro_input};
 
 use packed_font_structs::FontMetrics;
 
 mod pack_font;
+mod render;
 use pack_font::CompressedFont;
 
-const ALL_CHARS: RangeInclusive<u8> = 0x20..=0x7f;
+const ALL_CHARS: RangeInclusive<u8> = 0x20..=0x7e;
 
 #[derive(Parse)]
 struct Input {
@@ -45,7 +46,11 @@ pub fn packed_font(tokens: TokenStream) -> TokenStream {
         Err(e) => abort_call_site!("Can't read file '{}': {}", &file.to_string_lossy(), e),
     };
 
-    let CompressedFont { metrics, dict, font_data } = match CompressedFont::compress(bytes, ALL_CHARS, size as f32) {
+    let CompressedFont {
+        metrics,
+        dict,
+        font_data,
+    } = match CompressedFont::compress(bytes, ALL_CHARS, size as f32, &[][..]) {
         Ok(packed) => packed,
         Err(e) => abort_call_site!("Can't compress file '{}': {}", &file.to_string_lossy(), e),
     };
@@ -67,5 +72,6 @@ pub fn packed_font(tokens: TokenStream) -> TokenStream {
                 #(#font_data),*
             ],
         }
-    }.into()
+    }
+    .into()
 }
