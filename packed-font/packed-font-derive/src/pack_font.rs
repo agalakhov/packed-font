@@ -66,11 +66,19 @@ impl CompressedFont {
     pub fn compress<'t>(
         font: impl AsRef<[u8]>,
         chars: RangeInclusive<u8>,
-        size: f32,
+        size: u32,
         location: &[NormalizedCoord],
     ) -> Result<Self, Error> {
         let font = FontRef::new(font.as_ref())?;
-        let size = Size::new(size); // TODO
+
+        // Determine font size to match exact pixel size.
+        let size = {
+            let metrics = font.metrics(Size::new(1.0), location);
+            let height = metrics.ascent - metrics.descent + metrics.leading;
+            size as f32 / height
+        };
+
+        let size = Size::new(size);
         let outlines = font.outline_glyphs();
         let glyph_metrics = font.glyph_metrics(size, location);
         let hinting = HintingInstance::new(&outlines, size, location, HintingOptions::default())?;

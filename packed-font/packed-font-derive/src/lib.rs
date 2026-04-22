@@ -50,7 +50,7 @@ pub fn packed_font(tokens: TokenStream) -> TokenStream {
         metrics,
         dict,
         font_data,
-    } = match CompressedFont::compress(bytes, ALL_CHARS, size as f32, &[][..]) {
+    } = match CompressedFont::compress(bytes, ALL_CHARS, size as u32, &[][..]) {
         Ok(packed) => packed,
         Err(e) => abort_call_site!("Can't compress file '{}': {}", &file.to_string_lossy(), e),
     };

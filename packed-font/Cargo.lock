@@ -349,7 +349,6 @@ dependencies = [
  "anyhow",
  "bytemuck",
  "derive-syn-parse",
- "fontdue",
  "packed-font-structs",
  "proc-macro-error",
  "proc-macro2",
