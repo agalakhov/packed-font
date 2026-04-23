@@ -8,7 +8,7 @@ use embedded_graphics::{
 };
 use embedded_graphics_simulator::{OutputSettingsBuilder, SimulatorDisplay, Window};
 
-const FONT: PackedFont = packed_font!("din1451alt.ttf", 76);
+const FONT: PackedFont = packed_font!("/usr/share/fonts/TTF/DejaVuSerif.ttf", 76);
 
 fn main() {
     let mut display = SimulatorDisplay::<Rgb565>::new(Size::new(284, 76));

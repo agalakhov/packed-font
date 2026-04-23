@@ -51,7 +51,6 @@ fn get_metrics(metrics: &GlyphMetrics, id: GlyphId) -> Result<(PackedMetrics, Bo
     let left_bearing = (bbox.x_min.floor() as i32).try_into()?;
     let top_bearing = (bbox.y_max.ceil() as i32).try_into()?;
     let x = bbox.x_max.ceil() as i32;
-    let y = bbox.y_min.floor() as i32;
     let width = (x - left_bearing as i32).try_into()?;
 
     Ok((PackedMetrics {
