@@ -37,16 +37,12 @@ pub struct PackedFont {
 
 impl PackedFont {
     pub fn get_metrics_and_data(&self, character: char) -> Option<(&Metrics, &[u8])> {
-        let Ok(character) = TryInto::<u8>::try_into(character) else {
-            return None;
-        };
+        let character = TryInto::<u8>::try_into(character).ok()?;
         if character < self.first_char {
             return None;
         }
         let idx = (character - self.first_char) as usize;
-        let Some(offset) = self.dict.get(idx).map(|x| (*x) as usize) else {
-            return None;
-        };
+        let offset = self.dict.get(idx).map(|x| (*x) as usize)?;
         let end_offset = self
             .dict
             .get(idx + 1)
@@ -55,7 +51,6 @@ impl PackedFont {
         let raw = &self.data[offset..end_offset];
         let (metrics, packed) = raw.split_at(size_of::<Metrics>());
         let metrics: &Metrics = from_bytes(metrics);
-
         Some((metrics, packed))
     }
 

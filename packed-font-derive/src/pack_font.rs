@@ -40,7 +40,7 @@ fn compress(data: impl ExactSizeIterator<Item = u8>, bits: u8) -> Vec<u8> {
     if count > 0 {
         out.push(count.try_into().unwrap());
     }
-    sum_count += count as u32;
+    sum_count += count;
     assert_eq!(sum_count, total_count);
     out
 }
@@ -62,7 +62,7 @@ fn get_metrics(metrics: &GlyphMetrics, id: GlyphId) -> Result<(PackedMetrics, Bo
 }
 
 impl CompressedFont {
-    pub fn compress<'t>(
+    pub fn compress(
         font: impl AsRef<[u8]>,
         chars: RangeInclusive<u8>,
         size: u32,
