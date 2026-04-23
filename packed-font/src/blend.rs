@@ -1,4 +1,4 @@
-use embedded_graphics_core::pixelcolor::{
+use embedded_graphics::pixelcolor::{
     Bgr555, Bgr565, Bgr666, Bgr888, GrayColor, PixelColor, Rgb555, Rgb565, Rgb666, Rgb888, RgbColor,
 };
 

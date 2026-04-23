@@ -7,7 +7,7 @@ mod unpack;
 pub mod twocolor;
 
 use bytemuck::from_bytes;
-use embedded_graphics_core::{
+use embedded_graphics::{
     draw_target::DrawTarget,
     geometry::{Point, Size},
     pixelcolor::PixelColor,

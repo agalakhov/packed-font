@@ -1,4 +1,4 @@
-use embedded_graphics_core::pixelcolor::RgbColor;
+use embedded_graphics::pixelcolor::RgbColor;
 
 use super::{UnpackStyle, blend::Blend};
 use packed_font_structs::AaColor;

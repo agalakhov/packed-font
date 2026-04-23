@@ -1,0 +1,7 @@
+[workspace]
+resolver = "3"
+members = ["packed-font", "packed-font-structs", "packed-font-derive"]
+
+[patch.crates-io]
+packed-font-structs = { path = "packed-font-structs" }
+packed-font-derive = { path = "packed-font-derive" }
