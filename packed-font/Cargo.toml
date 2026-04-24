@@ -1,13 +1,20 @@
 [package]
 name = "packed-font"
 version = "0.1.0"
+description = "Compile-time font rasterizer and packer for embedded systems"
+categories = ["embedded", "graphics", "no-std"]
+keywords = ["embedded", "graphics", "bitmap", "font", "no_std", "truetype", "opentype"]
+authors = ["Alexey Galakhov <agalakhov@gmail.com>"]
+license = "MIT"
+homepage = "https://github.com/agalakhov/packed-font"
+documentation = "https://docs.rs/packed-font/0.1.0"
+repository = "https://github.com/agalakhov/packed-font"
 edition = "2024"
+include = ["examples/*", "src/*", "LICENSE", "README.md"]
 
 [dependencies]
-anyhow = "1.0.102"
 bytemuck = { version = "1.25.0", features = ["derive"] }
 embedded-graphics = "0.8.2"
-fontdue = "0.9.3"
 packed-font-derive = "0.1.0"
 packed-font-structs = "0.1.0"
 

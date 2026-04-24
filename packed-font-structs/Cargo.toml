@@ -1,6 +1,14 @@
 [package]
 name = "packed-font-structs"
 version = "0.1.0"
+description = "Compile-time font rasterizer and packer for embedded systems (type declarations)"
+categories = ["embedded", "graphics", "no-std"]
+keywords = ["embedded", "graphics", "bitmap", "font", "no_std", "truetype", "opentype"]
+authors = ["Alexey Galakhov <agalakhov@gmail.com>"]
+license = "MIT"
+homepage = "https://github.com/agalakhov/packed-font-structs"
+documentation = "https://docs.rs/packed-font/0.1.0"
+repository = "https://github.com/agalakhov/packed-font"
 edition = "2024"
 
 [dependencies]
