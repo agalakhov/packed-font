@@ -15,12 +15,12 @@ pub struct CharacterStyle<'t, S> {
     pub style: S,
 }
 
-impl<'t, S: UnpackStyle> CharacterStyle<'t, S> {
+impl<'t, S> CharacterStyle<'t, S> {
     pub fn new(font: &'t PackedFont, style: S) -> Self {
         Self { font, style }
     }
 
-    fn apply_baseline(&self, position: Point, baseline: Baseline) -> Point {
+    pub fn apply_baseline(&self, position: Point, baseline: Baseline) -> Point {
         let Point { x, mut y } = position;
         let metrics = &self.font.metrics;
         y += match baseline {
@@ -32,6 +32,85 @@ impl<'t, S: UnpackStyle> CharacterStyle<'t, S> {
             Baseline::Alphabetic => 0,
         };
         Point::new(x, y)
+    }
+}
+
+impl<'t, S: UnpackStyle> CharacterStyle<'t, S> {
+    pub fn draw_character<D>(
+        &self,
+        chr: char,
+        origin: Point,
+        target: &mut D,
+    ) -> Result<TextMetrics, D::Error>
+    where
+        D: DrawTarget<Color = S::Color>,
+    {
+        if let Some((metrics, height)) = self.font.render(chr, &self.style, origin, target)? {
+            let top_left = Point::new(origin.x, origin.y - self.font.metrics.ascent as i32);
+            let full_height = (self.font.metrics.ascent - self.font.metrics.descent) as u32;
+            if let Some(color) = self.style.background_color() {
+                if let Ok(left_bearing) = metrics.left_bearing.try_into() {
+                    target.fill_solid(
+                        &Rectangle::new(top_left, Size::new(left_bearing, full_height)),
+                        color,
+                    )?;
+                }
+                if self.font.metrics.ascent > metrics.top_bearing {
+                    target.fill_solid(
+                        &Rectangle::new(
+                            Point::new(top_left.x + metrics.left_bearing as i32, top_left.y),
+                            Size::new(
+                                metrics.width as u32,
+                                (self.font.metrics.ascent - metrics.top_bearing) as u32,
+                            ),
+                        ),
+                        color,
+                    )?;
+                }
+                let bottom_y_offset = height as i32 - metrics.top_bearing as i32;
+                let bottom_rest = -bottom_y_offset - self.font.metrics.descent as i32;
+                if bottom_rest > 0 {
+                    target.fill_solid(
+                        &Rectangle::new(
+                            Point::new(
+                                top_left.x + metrics.left_bearing as i32,
+                                origin.y + bottom_y_offset,
+                            ),
+                            Size::new(metrics.width as u32, bottom_rest as u32),
+                        ),
+                        color,
+                    )?;
+                }
+                let right_rest =
+                    metrics.advance as i32 - metrics.left_bearing as i32 - metrics.width as i32;
+                if right_rest > 0 {
+                    target.fill_solid(
+                        &Rectangle::new(
+                            Point::new(
+                                top_left.x + metrics.left_bearing as i32 + metrics.width as i32,
+                                top_left.y,
+                            ),
+                            Size::new(right_rest as u32, full_height),
+                        ),
+                        color,
+                    )?;
+                }
+            }
+
+            let next_position = Point::new(origin.x + metrics.advance as i32, origin.y);
+            let size = Size::new(metrics.advance as u32, full_height);
+            let bounding_box = Rectangle::new(top_left, size);
+            Ok(TextMetrics {
+                bounding_box,
+                next_position,
+            })
+        } else {
+            let bounding_box = Rectangle::new(origin, Size::new(0, 0));
+            Ok(TextMetrics {
+                bounding_box,
+                next_position: origin,
+            })
+        }
     }
 }
 
@@ -51,68 +130,13 @@ where
     where
         D: DrawTarget<Color = Self::Color>,
     {
-        let pos = self.apply_baseline(position, baseline);
-        let mut x = pos.x;
-        let y = pos.y;
+        let mut pos = self.apply_baseline(position, baseline);
 
         for chr in text.chars() {
-            let origin = Point::new(x, y);
-            if let Some((metrics, height)) = self.font.render(chr, &self.style, origin, target)? {
-                x += metrics.advance as i32;
-                if let Some(color) = self.style.background_color() {
-                    let full_height = (self.font.metrics.ascent - self.font.metrics.descent) as u32;
-                    let top_left = Point::new(origin.x, origin.y - self.font.metrics.ascent as i32);
-                    if let Ok(left_bearing) = metrics.left_bearing.try_into() {
-                        target.fill_solid(
-                            &Rectangle::new(top_left, Size::new(left_bearing, full_height)),
-                            color,
-                        )?;
-                    }
-                    if self.font.metrics.ascent > metrics.top_bearing {
-                        target.fill_solid(
-                            &Rectangle::new(
-                                Point::new(top_left.x + metrics.left_bearing as i32, top_left.y),
-                                Size::new(
-                                    metrics.width as u32,
-                                    (self.font.metrics.ascent - metrics.top_bearing) as u32,
-                                ),
-                            ),
-                            color,
-                        )?;
-                    }
-                    let bottom_y_offset = height as i32 - metrics.top_bearing as i32;
-                    let bottom_rest = -bottom_y_offset - self.font.metrics.descent as i32;
-                    if bottom_rest > 0 {
-                        target.fill_solid(
-                            &Rectangle::new(
-                                Point::new(
-                                    top_left.x + metrics.left_bearing as i32,
-                                    origin.y + bottom_y_offset,
-                                ),
-                                Size::new(metrics.width as u32, bottom_rest as u32),
-                            ),
-                            color,
-                        )?;
-                    }
-                    let right_rest =
-                        metrics.advance as i32 - metrics.left_bearing as i32 - metrics.width as i32;
-                    if right_rest > 0 {
-                        target.fill_solid(
-                            &Rectangle::new(
-                                Point::new(
-                                    top_left.x + metrics.left_bearing as i32 + metrics.width as i32,
-                                    top_left.y,
-                                ),
-                                Size::new(right_rest as u32, full_height),
-                            ),
-                            color,
-                        )?;
-                    }
-                }
-            }
+            pos = self.draw_character(chr, pos, target)?.next_position;
         }
 
-        Ok(Point::new(x, position.y))
+        Ok(Point::new(pos.x, position.y))
     }
 
     fn draw_whitespace<D>(
