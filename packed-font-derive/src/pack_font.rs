@@ -72,9 +72,20 @@ impl CompressedFont {
 
         // Determine font size to match exact pixel size.
         let size = {
-            let metrics = font.metrics(Size::new(1.0), location);
-            let height = metrics.ascent - metrics.descent + metrics.leading;
-            size as f32 / height
+            let mut s = 1.0;
+            let mut iter = 0;
+            loop {
+                iter += 1;
+                if iter > 100 {
+                    Err(anyhow!("Failed to compute font size"))?;
+                }
+                let metrics = font.metrics(Size::new(s), location);
+                let pixel_height = (metrics.ascent.ceil() as i32 - metrics.descent.floor() as i32) as u32;
+                if pixel_height == size {
+                    break s;
+                }
+                s = s * size as f32 / pixel_height as f32;
+            }
         };
 
         let size = Size::new(size);

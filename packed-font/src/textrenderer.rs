@@ -24,10 +24,8 @@ impl<'t, S> CharacterStyle<'t, S> {
         let Point { x, mut y } = position;
         let metrics = &self.font.metrics;
         y += match baseline {
-            Baseline::Top => metrics.ascent as i32 + (metrics.leading / 2) as i32,
-            Baseline::Bottom => {
-                metrics.descent as i32 + (metrics.leading - metrics.leading / 2) as i32
-            }
+            Baseline::Top => metrics.ascent as i32,
+            Baseline::Bottom => metrics.descent as i32,
             Baseline::Middle => (metrics.ascent as i32 + metrics.descent as i32) / 2,
             Baseline::Alphabetic => 0,
         };
