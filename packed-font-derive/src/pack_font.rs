@@ -1,10 +1,14 @@
 use anyhow::{Error, anyhow};
 use bytemuck::bytes_of;
-use skrifa::{prelude::*, metrics::{GlyphMetrics, BoundingBox}, outline::{HintingInstance, HintingOptions}};
+use skrifa::{
+    metrics::{BoundingBox, GlyphMetrics},
+    outline::{HintingInstance, HintingOptions},
+    prelude::*,
+};
 use std::ops::RangeInclusive;
 
-use packed_font_structs::{AA_BITS, FontMetrics, Metrics as PackedMetrics};
 use crate::render::Bitmap;
+use packed_font_structs::{AA_BITS, FontMetrics, Metrics as PackedMetrics};
 
 #[derive(Debug)]
 pub struct CompressedFont {
@@ -46,19 +50,26 @@ fn compress(data: impl ExactSizeIterator<Item = u8>, bits: u8) -> Vec<u8> {
 }
 
 fn get_metrics(metrics: &GlyphMetrics, id: GlyphId) -> Result<(PackedMetrics, BoundingBox), Error> {
-    let advance = (metrics.advance_width(id).unwrap().ceil() as i32).try_into()?;
-    let bbox = metrics.bounds(id).unwrap();
+    let advance = (metrics
+        .advance_width(id)
+        .expect("Glyph has no advance width")
+        .ceil() as i32)
+        .try_into()?;
+    let bbox = metrics.bounds(id).expect("Glyph has no bounds");
     let left_bearing = (bbox.x_min.floor() as i32).try_into()?;
     let top_bearing = (bbox.y_max.ceil() as i32).try_into()?;
     let x = bbox.x_max.ceil() as i32;
     let width = (x - left_bearing as i32).try_into()?;
 
-    Ok((PackedMetrics {
-        left_bearing,
-        top_bearing,
-        width,
-        advance,
-    }, bbox))
+    Ok((
+        PackedMetrics {
+            left_bearing,
+            top_bearing,
+            width,
+            advance,
+        },
+        bbox,
+    ))
 }
 
 impl CompressedFont {
@@ -80,7 +91,8 @@ impl CompressedFont {
                     Err(anyhow!("Failed to compute font size"))?;
                 }
                 let metrics = font.metrics(Size::new(s), location);
-                let pixel_height = (metrics.ascent.ceil() as i32 - metrics.descent.floor() as i32) as u32;
+                let pixel_height =
+                    (metrics.ascent.ceil() as i32 - metrics.descent.floor() as i32) as u32;
                 if pixel_height == size {
                     break s;
                 }
@@ -107,7 +119,7 @@ impl CompressedFont {
             let height = (bbox.y_max.ceil() - bbox.y_min.floor()) as u32;
             let bitmap = if metrics.width > 0 && height > 0 {
                 let mut bitmap = Bitmap::new(-bbox.x_min, bbox.y_max, metrics.width as u32, height);
-                let glyph = outlines.get(id).unwrap();
+                let glyph = outlines.get(id).expect("Glyph has no outlines");
                 bitmap.draw_glyph(&hinting, &glyph);
                 Some(bitmap)
             } else {
