@@ -114,7 +114,7 @@ impl<'t, S: UnpackStyle> CharacterStyle<'t, S> {
     pub fn measure_character(&self, chr: char) -> Size {
         let full_height = (self.font.metrics.ascent - self.font.metrics.descent) as u32;
         let Some((metrics, _)) = self.font.get_metrics_and_data(chr) else {
-            return Size::zero()
+            return Size::zero();
         };
         let width = metrics.advance.max(0) as u32;
         Size::new(width, full_height)

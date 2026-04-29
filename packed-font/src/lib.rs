@@ -88,6 +88,7 @@ impl PackedFont {
         } else {
             0
         };
+
         Ok(Some((metrics, height)))
     }
 }

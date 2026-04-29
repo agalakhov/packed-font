@@ -8,13 +8,13 @@ use embedded_graphics::{
 };
 use embedded_graphics_simulator::{OutputSettingsBuilder, SimulatorDisplay, Window};
 
-const FONT: PackedFont = packed_font!("/usr/share/fonts/TTF/arial.ttf", 76);
+const FONT: PackedFont = packed_font!("/usr/share/fonts/TTF/DejaVuSerif.ttf", 76);
 
 fn main() {
     let mut display = SimulatorDisplay::<Rgb565>::new(Size::new(284, 76));
 
     let colors = TwoColor {
-        foreground: Rgb565::RED,
+        foreground: Rgb565::GREEN,
         background: Rgb565::BLACK,
     };
 
@@ -24,7 +24,7 @@ fn main() {
     };
 
     Text::with_text_style(
-        "ERROR",
+        "Booting",
         Point::new(142, 38),
         style,
         TextStyleBuilder::new()
@@ -35,6 +35,6 @@ fn main() {
     .draw(&mut display)
     .expect("Error rendering text");
 
-    let output_settings = OutputSettingsBuilder::new().scale(1).build();
+    let output_settings = OutputSettingsBuilder::new().scale(4).build();
     Window::new("Two color demo", &output_settings).show_static(&display);
 }
