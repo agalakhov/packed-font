@@ -1,6 +1,6 @@
 #![no_std]
 
-use bytemuck::{NoUninit, AnyBitPattern};
+use bytemuck::{AnyBitPattern, NoUninit};
 use embedded_graphics_core::pixelcolor::Gray4;
 
 pub const AA_BITS: u8 = 4;
@@ -21,4 +21,3 @@ pub struct Metrics {
     pub width: u8,
     pub advance: u8,
 }
-

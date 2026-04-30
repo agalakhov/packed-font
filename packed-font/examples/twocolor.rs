@@ -8,7 +8,7 @@ use embedded_graphics::{
 };
 use embedded_graphics_simulator::{OutputSettingsBuilder, SimulatorDisplay, Window};
 
-const FONT: PackedFont = packed_font!("/usr/share/fonts/TTF/DejaVuSerif.ttf", 76);
+const FONT: PackedFont = packed_font!("/home/agalakhov/.local/share/fonts/din1451alt.ttf", 76);
 
 fn main() {
     let mut display = SimulatorDisplay::<Rgb565>::new(Size::new(284, 76));
@@ -24,7 +24,7 @@ fn main() {
     };
 
     Text::with_text_style(
-        "Booting",
+        "{A}{B}",
         Point::new(142, 38),
         style,
         TextStyleBuilder::new()

@@ -50,12 +50,11 @@ fn compress(data: impl ExactSizeIterator<Item = u8>, bits: u8) -> Vec<u8> {
 }
 
 fn get_metrics(metrics: &GlyphMetrics, id: GlyphId) -> Result<(PackedMetrics, BoundingBox), Error> {
-    let advance = (metrics
+    let advance = metrics
         .advance_width(id)
-        .expect("Glyph has no advance width")
-        .ceil() as i32)
-        .try_into()?;
+        .expect("Glyph has no advance width");
     let bbox = metrics.bounds(id).expect("Glyph has no bounds");
+    let advance = (advance.max(bbox.x_max).ceil() as i32).try_into()?; // fix advance for some "broken" fonts
     let left_bearing = (bbox.x_min.floor() as i32).try_into()?;
     let top_bearing = (bbox.y_max.ceil() as i32).try_into()?;
     let x = bbox.x_max.ceil() as i32;
