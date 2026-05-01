@@ -5,7 +5,6 @@ use skrifa::{
     outline::{HintingInstance, HintingOptions},
     prelude::*,
 };
-use std::ops::RangeInclusive;
 
 use crate::render::Bitmap;
 use packed_font_structs::{AA_BITS, FontMetrics, Metrics as PackedMetrics};
@@ -74,7 +73,7 @@ fn get_metrics(metrics: &GlyphMetrics, id: GlyphId) -> Result<(PackedMetrics, Bo
 impl CompressedFont {
     pub fn compress(
         font: impl AsRef<[u8]>,
-        chars: RangeInclusive<u8>,
+        chars: impl IntoIterator<Item = char>,
         size: u32,
         location: &[NormalizedCoord],
     ) -> Result<Self, Error> {

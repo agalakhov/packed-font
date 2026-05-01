@@ -21,3 +21,16 @@ pub struct Metrics {
     pub width: u8,
     pub advance: u8,
 }
+
+pub fn all_chars() -> impl Iterator<Item = char> {
+    ('\x20'..='\x7e').into_iter().chain(['°'])
+}
+
+pub const fn map_character(chr: char) -> Option<u8> {
+    const BASE: u8 = 0x20;
+    match chr {
+        '\x20'..='\x7e' => Some(chr as u8 - BASE),
+        '°' => Some(0x7f - BASE),
+        _ => None,
+    }
+}

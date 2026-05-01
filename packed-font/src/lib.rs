@@ -17,7 +17,7 @@ use embedded_graphics::{
 use self::unpack::Unpacker;
 
 pub use packed_font_derive::packed_font;
-pub use packed_font_structs::{AaColor, FontMetrics, Metrics};
+pub use packed_font_structs::{AaColor, FontMetrics, Metrics, map_character};
 
 pub use textrenderer::CharacterStyle;
 
@@ -30,18 +30,13 @@ pub trait UnpackStyle {
 #[derive(Debug)]
 pub struct PackedFont {
     pub metrics: FontMetrics,
-    pub first_char: u8,
     pub dict: &'static [u16],
     pub data: &'static [u8],
 }
 
 impl PackedFont {
     pub fn get_metrics_and_data(&self, character: char) -> Option<(&Metrics, &[u8])> {
-        let character = TryInto::<u8>::try_into(character).ok()?;
-        if character < self.first_char {
-            return None;
-        }
-        let idx = (character - self.first_char) as usize;
+        let idx = map_character(character)? as usize;
         let offset = self.dict.get(idx).map(|x| (*x) as usize)?;
         let end_offset = self
             .dict

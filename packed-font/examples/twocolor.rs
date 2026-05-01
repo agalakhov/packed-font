@@ -24,7 +24,7 @@ fn main() {
     };
 
     Text::with_text_style(
-        "{A}{B}",
+        "{A}{B} 27°C",
         Point::new(142, 38),
         style,
         TextStyleBuilder::new()

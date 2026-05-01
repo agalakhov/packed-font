@@ -51,8 +51,8 @@ See `examples/` directory in the repository for more.
 
 ## Limitations
 
-* Only 7-bit ASCII (codes from 0x20 to 0x7e) is used to save space.
-  No support for other languages (yet).
+* Only 7-bit ASCII (codes from 0x20 to 0x7e) and degree symbol (0xB0)
+  are used to save space. No support for other languages (yet).
 
 * Compression is less efficient with smaller fonts. For very small sizes
   consider using bitmap fonts instead.
