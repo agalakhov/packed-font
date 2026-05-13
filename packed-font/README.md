@@ -1,4 +1,4 @@
-# Compile-time bitmap font rasterizer for embedded systems
+# Compile-time TTF-to-bitmap font rasterizer for embedded systems
 
 High-quality font rendering for small microcontrollers with big displays
 compatible with [https://crates.io/crates/embedded-graphics] ecosystem.
